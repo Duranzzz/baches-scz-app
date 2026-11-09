@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11161c">
+  <meta name="description" content="Detecta baches y grietas con la cámara del celular y los marca en el mapa de Santa Cruz de la Sierra.">
+  <title>Baches SCZ</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="iconos/icono-192.png">
+  <link rel="apple-touch-icon" href="iconos/icono-192.png">
+  <link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
+  <link rel="stylesheet" href="estilos.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body class="modo-recorrido">
+  <header class="barra">
+    <div class="marca">
+      <img src="iconos/icono-192.png" alt="" width="34" height="34">
+      <div><b>Baches SCZ</b><small>Santa Cruz de la Sierra</small></div>
+    </div>
+    <button id="btn-instalar" class="btn-instalar" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
+      Descargar app
+    </button>
+    <button id="btn-info" class="btn-redondo" type="button" aria-label="Acerca de la app">?</button>
+  </header>
+
+  <main>
+    <section id="panel-video" class="panel-video" aria-label="Detección">
+      <div class="marco">
+        <video id="video" playsinline muted></video>
+        <canvas id="capa"></canvas>
+        <div id="vacio" class="vacio">
+          <p><b>1.</b> Elige de dónde sale la imagen: la <b>cámara</b> o un <b>video</b> de prueba.</p>
+          <p><b>2.</b> Toca <b>Detectar</b>. Cada bache o grieta confirmado aparece como un punto en el mapa.</p>
+        </div>
+        <div id="hud" class="hud" hidden></div>
+        <div id="carga" class="carga" hidden>
+          <div class="texto">Cargando…</div>
+          <div class="progreso"><i></i></div>
+        </div>
+      </div>
+      <div class="controles">
+        <button id="btn-camara" class="btn" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Cámara
+        </button>
+        <label class="btn" for="archivo-video">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg>Video
+        </label>
+        <input id="archivo-video" type="file" accept="video/*" hidden>
+        <button id="btn-detectar" class="btn primario" type="button" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14l11-7z"/></svg><span>Detectar</span>
+        </button>
+        <button id="btn-ajustes" class="btn solo-icono" type="button" aria-label="Ajustes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
+        </button>
+      </div>
+      <div class="contadores">
+        <span class="chip bache"><i></i><b id="n-baches">0</b> baches</span>
+        <span class="chip grieta"><i></i><b id="n-grietas">0</b> grietas</span>
+        <button id="chip-pos" class="chip pos" type="button">Posición simulada</button>
+      </div>
+    </section>
+
+    <div id="mapa" class="mapa" aria-label="Mapa de Santa Cruz"></div>
+    <button id="btn-seguir" class="flotante" type="button" hidden>Seguir al vehículo</button>
+    <div class="leyenda" aria-hidden="true">
+      <span><i class="bache"></i>Bache</span><span><i class="grieta"></i>Grieta</span><small>más grande = más severo</small>
+    </div>
+
+    <section id="panel-datos" class="panel-datos" aria-label="Datos">
+      <div class="acciones">
+        <button id="btn-geojson" class="btn" type="button">Exportar GeoJSON</button>
+        <button id="btn-csv" class="btn" type="button">Exportar CSV</button>
+        <label class="btn" for="archivo-geojson">Importar</label>
+        <input id="archivo-geojson" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden>
+        <button id="btn-borrar" class="btn peligro" type="button">Borrar todo</button>
+      </div>
+      <p id="resumen-datos" class="resumen"></p>
+      <ul id="lista" class="lista"></ul>
+    </section>
+  </main>
+
+  <nav class="pestanas" aria-label="Secciones">
+    <button type="button" data-modo="recorrido" class="activa">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Recorrido
+    </button>
+    <button type="button" data-modo="mapa">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14m6-12v14"/></svg>Mapa
+    </button>
+    <button type="button" data-modo="datos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Datos
+    </button>
+  </nav>
+
+  <dialog id="dlg-ajustes" class="dialogo">
+    <form method="dialog">
+      <h2>Ajustes</h2>
+      <label class="campo">Modelo
+        <select data-ajuste="modelo" id="sel-modelo"></select>
+      </label>
+      <label class="fila"><input type="checkbox" data-ajuste="soloBaches"> Marcar solo baches (ignorar grietas)</label>
+      <label class="campo">Confianza mínima de bache: <output data-valor="confBache"></output>
+        <input type="range" min="0.10" max="0.90" step="0.05" data-ajuste="confBache">
+      </label>
+      <label class="campo">Confianza mínima de grieta: <output data-valor="confGrieta"></output>
+        <input type="range" min="0.10" max="0.90" step="0.05" data-ajuste="confGrieta">
+      </label>
+      <label class="fila"><input type="checkbox" data-ajuste="confirmar"> Registrar solo si aparece en 2 de 3 cuadros seguidos</label>
+      <label class="campo">Resolución de análisis
+        <select data-ajuste="lado">
+          <option value="480">480 px (más rápido)</option>
+          <option value="640">640 px (recomendado)</option>
+          <option value="864">864 px (ve más lejos, más lento)</option>
+        </select>
+      </label>
+      <label class="campo">Velocidad del video de prueba
+        <select data-ajuste="velocidadVideo">
+          <option value="0.25">0,25× (para teléfonos lentos)</option>
+          <option value="0.5">0,5×</option>
+          <option value="1">1× (normal)</option>
+        </select>
+      </label>
+      <fieldset>
+        <legend>Posición de cada punto</legend>
+        <label class="fila"><input type="radio" name="posicion" value="simulada" data-ajuste="posicion"> Simulada: el vehículo recorre una ruta de Santa Cruz</label>
+        <label class="fila"><input type="radio" name="posicion" value="gps" data-ajuste="posicion"> GPS real del teléfono</label>
+      </fieldset>
+      <label class="campo">Ruta simulada
+        <select data-ajuste="ruta" id="sel-ruta"></select>
+      </label>
+      <label class="campo">Velocidad simulada: <output data-valor="kmh"></output> km/h
+        <input type="range" min="10" max="60" step="5" data-ajuste="kmh">
+      </label>
+      <label class="campo">Unir con un punto del mismo tipo a menos de <output data-valor="radio"></output> m
+        <input type="range" min="5" max="40" step="5" data-ajuste="radio">
+      </label>
+      <label class="campo">Motor
+        <select data-ajuste="motor">
+          <option value="auto">Automático: GPU del teléfono si hay (WebGPU), si no CPU</option>
+          <option value="cpu">Solo CPU</option>
+        </select>
+      </label>
+      <p id="info-motor" class="nota"></p>
+      <button class="btn primario ancho" value="cerrar">Listo</button>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-instalar" class="dialogo">
+    <form method="dialog">
+      <h2>Instalar Baches SCZ</h2>
+      <p>Es una página web que se instala como app, sin tienda: queda un ícono en el teléfono, abre a pantalla completa y funciona sin conexión (salvo el mapa).</p>
+      <h3>Android (Chrome)</h3>
+      <ol>
+        <li>Toca el menú <b>⋮</b> arriba a la derecha.</li>
+        <li>Toca <b>Instalar app</b> o <b>Agregar a la pantalla principal</b>.</li>
+      </ol>
+      <h3>iPhone (Safari)</h3>
+      <ol>
+        <li>Toca <b>Compartir</b> (el cuadrado con la flecha).</li>
+        <li>Toca <b>Agregar a inicio</b>.</li>
+      </ol>
+      <button class="btn primario ancho" value="cerrar">Entendido</button>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-info" class="dialogo">
+    <form method="dialog">
+      <h2>Qué hace</h2>
+      <p>Mira la calle con la cámara (o un video de prueba) y busca baches y grietas con un modelo de IA que corre <b>dentro del teléfono</b>. Cuando un daño aparece en 2 de 3 cuadros seguidos, lo marca en el mapa en la posición del vehículo. Los puntos se guardan solo en este teléfono; se pueden exportar en GeoJSON o CSV.</p>
+      <h3>Modelos</h3>
+      <ul>
+        <li><b>Vehículo:</b> YOLO12s entrenado con RDD2022 (rezzzq, MIT). Baches y grietas.</li>
+        <li><b>De cerca:</b> el YOLO de baches del 1.er parcial. Rinde con fotos de cerca (AP50 0,68), no desde un vehículo.</li>
+      </ul>
+      <h3>Límites</h3>
+      <ul>
+        <li>No hay fotos de Santa Cruz etiquetadas: la precisión aquí no está medida.</li>
+        <li>En cámara de vehículo, los baches se detectan poco (AP50 0,15 a 0,23 en datasets públicos).</li>
+        <li>Las juntas de losas de hormigón y adoquín pueden salir como grietas.</li>
+        <li>La severidad es provisional: sale del tamaño de la caja.</li>
+        <li>Con posición simulada, el punto no es la ubicación real del daño.</li>
+      </ul>
+      <p class="nota">Mapa: © OpenStreetMap, teselas de OpenFreeMap, MapLibre GL JS. Modelos con ONNX Runtime Web. Proyecto de Inteligencia Artificial, UCB.</p>
+      <button class="btn primario ancho" value="cerrar">Cerrar</button>
+    </form>
+  </dialog>
+
+  <div id="avisos" class="avisos" aria-live="polite"></div>
+</body>
+</html>

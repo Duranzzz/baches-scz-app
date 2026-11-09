@@ -1,0 +1,19 @@
+{
+  "name": "Baches SCZ: baches y grietas en el mapa",
+  "short_name": "Baches SCZ",
+  "description": "Detecta baches y grietas con la cámara del celular y los marca en el mapa de Santa Cruz de la Sierra.",
+  "lang": "es",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#11161c",
+  "theme_color": "#11161c",
+  "categories": ["utilities", "navigation"],
+  "icons": [
+    { "src": "iconos/icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "iconos/icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "iconos/icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

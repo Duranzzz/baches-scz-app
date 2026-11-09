@@ -1,0 +1,48 @@
+{
+ "modelos": [
+  {
+   "id": "yolo12s_rdd2022",
+   "titulo": "YOLO12s RDD2022 (baches y grietas)",
+   "archivo": "yolo12s_rdd2022.onnx",
+   "uso": "vehiculo",
+   "clases": {
+    "0": "grieta_longitudinal",
+    "1": "grieta_transversal",
+    "2": "grieta_cocodrilo",
+    "3": "bache",
+    "4": null
+   },
+   "nombres_originales": {
+    "0": "D00",
+    "1": "D10",
+    "2": "D20",
+    "3": "D40",
+    "4": "Repair"
+   },
+   "conf": {
+    "bache": 0.25,
+    "grieta": 0.4
+   },
+   "mb": 38.0,
+   "licencia": "MIT, rezzzq/yolo12s-road-damage-rdd2022 (entrenado con ultralytics, AGPL-3.0)"
+  },
+  {
+   "id": "parcial1_bisman",
+   "titulo": "YOLO del 1er parcial (baches de cerca)",
+   "archivo": "parcial1_bisman.onnx",
+   "uso": "cerca",
+   "clases": {
+    "0": "bache"
+   },
+   "nombres_originales": {
+    "0": "pothole"
+   },
+   "conf": {
+    "bache": 0.25,
+    "grieta": 0.4
+   },
+   "mb": 10.7,
+   "licencia": "modelo de Bisman Singh verificado en el 1er parcial (entrenado con ultralytics, AGPL-3.0)"
+  }
+ ]
+}
