@@ -102,6 +102,7 @@ main { position: relative; display: grid; min-height: 0; grid-template-rows: aut
 .chip.bache i { background: var(--bache); }
 .chip.grieta i { background: var(--grieta); }
 .chip.pos { margin-left: auto; color: #9fd0ff; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.pos.alerta { color: #ffd0cc; background: #5a1f1c; }
 
 /* Mapa */
 .mapa { position: relative; min-height: 0; min-width: 0; }

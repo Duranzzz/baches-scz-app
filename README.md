@@ -11,16 +11,20 @@ entrenamiento está en un repositorio aparte.
 
 ## Cómo se usa
 
-1. **Recorrido**: elegir **Cámara** (trasera) o **Video** (un archivo del teléfono) y tocar **Detectar**.
-   Cada daño se dibuja sobre la imagen. Cuando aparece en 2 de 3 cuadros seguidos, se vuelve un punto en el mapa.
+1. **Recorrido**: permitir la **ubicación**, elegir **Cámara** (trasera) o **Video** (un archivo del
+   teléfono) y tocar **Detectar**. Cada daño se dibuja sobre la imagen. Cuando aparece en 2 de 3 cuadros
+   seguidos, se vuelve al instante un punto en el mapa, en tu ubicación, y queda guardado en el teléfono.
 2. **Mapa**: los puntos (rojo = bache, naranja = grieta; más grande = más severo). Al tocar uno se ve el
    recorte del daño, la confianza, cuántas veces se vio y la calle.
 3. **Datos**: la lista de puntos, y **Exportar GeoJSON / CSV** (se abren en QGIS, Google Earth o My Maps).
 4. **Descargar app**: la instala en el teléfono como una app (es la misma página; ver abajo).
 
-En **Ajustes** (⚙) se elige el modelo, las confianzas mínimas, la resolución de análisis y si la
-**posición es simulada** (un vehículo recorre una ruta real de Santa Cruz a la velocidad elegida, para
-probar en interiores o con videos sin GPS) o es el **GPS real** del teléfono.
+En **Ajustes** (⚙) se elige el modelo, las confianzas mínimas y la resolución de análisis. Ahí también
+está el **recorrido de prueba**: en vez del GPS, un vehículo virtual recorre una ruta real de Santa Cruz a
+la velocidad elegida, para probar videos sin moverse. Por defecto se usa la ubicación real.
+
+Con un video y la ubicación real, el teléfono no se mueve: cada daño nuevo es un punto aparte en tu
+ubicación (no se unen por cercanía).
 
 ### Instalar
 
@@ -68,7 +72,7 @@ Ambos se entrenaron con [ultralytics](https://github.com/ultralytics/ultralytics
 - Desde un vehículo los baches se detectan poco. Las juntas de losas de hormigón, el adoquín y a veces la
   carrocería del propio auto pueden salir como grietas.
 - La **severidad es provisional**: sale del tamaño de la caja en la imagen, no de una medida real.
-- Con **posición simulada**, el punto no es la ubicación real del daño (se avisa en cada punto).
+- Con el **recorrido de prueba**, el punto no es la ubicación real del daño (se avisa en cada punto).
 - El GPS del teléfono tiene unos 5 a 10 m de error, y la cámara mira hacia adelante: el daño suele estar
   unos metros más allá del punto.
 

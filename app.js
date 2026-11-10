@@ -12,8 +12,9 @@ const HILOS = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurren
 
 const PREDETERMINADOS = {
   modelo: 'yolo12s_rdd2022', soloBaches: false, confBache: 0.25, confGrieta: 0.4, confirmar: true, lado: 640,
-  velocidadVideo: 1, posicion: 'simulada', ruta: 'r1', kmh: 25, radio: 15, motor: 'auto',
+  velocidadVideo: 1, posicion: 'gps', ruta: 'r1', kmh: 25, radio: 15, motor: 'auto',
 };
+const CLAVE_AJUSTES = 'ajustes-v2';   // v2: la ubicación real pasó a ser la predeterminada
 const NOMBRE = {
   bache: 'Bache', grieta: 'Grieta', grieta_longitudinal: 'Grieta longitudinal',
   grieta_transversal: 'Grieta transversal', grieta_cocodrilo: 'Grieta cocodrilo',
@@ -25,15 +26,15 @@ const PESO_GRIETA = { grieta_longitudinal: 1, grieta_transversal: 1, grieta_coco
 const EVENTO_S = 1.0;   // sin verlo más de 1 s, lo siguiente es otro daño
 
 function leerAjustes() {
-  try { return { ...PREDETERMINADOS, ...JSON.parse(localStorage.getItem('ajustes') || '{}') }; } catch { return { ...PREDETERMINADOS }; }
+  try { return { ...PREDETERMINADOS, ...JSON.parse(localStorage.getItem(CLAVE_AJUSTES) || '{}') }; } catch { return { ...PREDETERMINADOS }; }
 }
 const aj = leerAjustes();
-function guardarAjustes() { try { localStorage.setItem('ajustes', JSON.stringify(aj)); } catch { /* sin almacenamiento */ } }
+function guardarAjustes() { try { localStorage.setItem(CLAVE_AJUSTES, JSON.stringify(aj)); } catch { /* sin almacenamiento */ } }
 
 const est = {
   modelos: [], rutas: [], ruta: null, detector: null, detectorId: null, cargando: null,
   corriendo: false, ocupado: false, fuente: null, nombreVideo: '', urlVideo: null, stream: null,
-  gps: null, posGps: null, t0: 0, ultimaPos: '', puntos: [],
+  gps: null, posGps: null, gpsEstado: 'buscando', t0: 0, ultimaPos: '', puntos: [], borrados: new Set(),
   historial: { bache: [], grieta: [] }, evento: { bache: null, grieta: null },
   ms: 0, pantalla: null, instalar: null,
 };
@@ -59,25 +60,49 @@ async function iniciar() {
     aviso(`No se pudieron leer los datos de la app: ${e.message}`, 'error');
   }
   llenarAjustes();
-  try { est.puntos = await almacen.todos(); } catch (e) { aviso('No se pudo abrir el almacenamiento del teléfono', 'error'); }
-  refrescarPuntos();
+  await cargarPuntos();
   aplicarPosicion();
   setInterval(tick, 300);
 }
 
+/**
+ * Los puntos quedan guardados en el teléfono (IndexedDB): siguen ahí al actualizar o cerrar la app.
+ * Justo al actualizar, la página anterior todavía puede tener la base abierta y la primera lectura vuelve
+ * vacía (probado en Chrome/Edge). Por eso se vuelve a leer un momento después, uniendo sin duplicar y sin
+ * revivir los puntos que se borraron.
+ */
+async function cargarPuntos() {
+  try { navigator.storage.persist().catch(() => {}); } catch { /* sin la API: igual se guardan */ }   // que no los borre si falta espacio
+  let fallo = false;
+  const unir = async () => {
+    let lista;
+    try { lista = await almacen.todos(); fallo = false; } catch { fallo = true; return false; }
+    const ids = new Set(est.puntos.map((p) => p.id));
+    const nuevos = lista.filter((p) => !ids.has(p.id) && !est.borrados.has(p.id));
+    est.puntos.push(...nuevos);
+    return nuevos.length > 0;
+  };
+  await unir();
+  if (fallo) aviso('No se pudo abrir el almacenamiento del teléfono', 'error');
+  refrescarPuntos();
+  for (const ms of [800, 2500, 6000]) {
+    setTimeout(async () => { if (await unir()) refrescarPuntos(); }, ms);
+  }
+}
+
 function registrarServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js').then(() => {
-    // El service worker agrega las cabeceras que habilitan varios hilos en la CPU; la primera visita
-    // no las tiene, así que se recarga una vez cuando toma el control.
-    if (self.crossOriginIsolated || navigator.serviceWorker.controller) return;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      let ya = false;
-      try { ya = sessionStorage.getItem('recargado') === '1'; sessionStorage.setItem('recargado', '1'); } catch { ya = true; }
-      // Si ya eligió cámara o video, no se recarga: esta vez la CPU usa un hilo y la próxima vez, varios.
-      if (!ya && !est.fuente) location.reload();
-    });
-  }).catch((e) => console.warn('service worker', e));
+  const habiaControl = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('service worker', e));
+  // Cuando toma el control un service worker se recarga una vez: en la primera visita, para tener las
+  // cabeceras que habilitan varios hilos de CPU; después, para usar la versión nueva de la app.
+  // Si ya eligió cámara o video no se recarga (se aplica la próxima vez que abra la app).
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!habiaControl && self.crossOriginIsolated) return;
+    let ultima = 0;
+    try { ultima = Number(sessionStorage.getItem('recargado') || 0); sessionStorage.setItem('recargado', String(Date.now())); } catch { return; }
+    if (Date.now() - ultima > 10000 && !est.fuente) location.reload();
+  });
 }
 
 function configurarInstalar() {
@@ -102,7 +127,10 @@ function conectarUI() {
   $('#archivo-video').addEventListener('change', (e) => { if (e.target.files[0]) usarVideo(e.target.files[0]); e.target.value = ''; });
   $('#btn-detectar').addEventListener('click', () => (est.corriendo ? detener() : comenzar()));
   $('#btn-ajustes').addEventListener('click', () => $('#dlg-ajustes').showModal());
-  $('#chip-pos').addEventListener('click', () => $('#dlg-ajustes').showModal());
+  $('#chip-pos').addEventListener('click', () => {
+    if (aj.posicion === 'gps' && est.gpsEstado !== 'ok') { iniciarGps(true); return; }
+    $('#dlg-ajustes').showModal();
+  });
   $('#btn-info').addEventListener('click', () => $('#dlg-info').showModal());
   $('#btn-seguir').addEventListener('click', () => { mapa.seguir = true; $('#btn-seguir').hidden = true; est.ultimaPos = ''; });
   $('#btn-geojson').addEventListener('click', exportarGeojson);
@@ -392,7 +420,12 @@ async function procesar(dets, v, lb) {
 
 async function registrar(tipo, d, ahora, v, lb) {
   const pos = posicionActual();
-  if (!pos) { avisoUnaVez('Esperando la señal de GPS para ubicar los daños…'); return; }
+  if (!pos) {
+    avisoUnaVez(est.gpsEstado === 'bloqueada'
+      ? 'Sin permiso de ubicación no se pueden marcar los daños. Actívalo en el candado junto a la dirección.'
+      : 'Esperando tu ubicación para marcar los daños…');
+    return;
+  }
   const areaRel = ((d.caja[2] - d.caja[0]) * (d.caja[3] - d.caja[1])) / (v.videoWidth * v.videoHeight);
   const sev = severidad(d, areaRel);
   const iso = new Date().toISOString();
@@ -407,7 +440,10 @@ async function registrar(tipo, d, ahora, v, lb) {
     await guardarPunto(p);
     return;
   }
-  const cerca = est.puntos.find((p) => p.tipo === tipo && distancia([p.lon, p.lat], [pos.lon, pos.lat]) <= aj.radio);
+  // Con un video y la ubicación real, el teléfono no se mueve: unir por distancia juntaría todos los
+  // daños del video en un solo punto. Ahí cada daño nuevo es un punto aparte, en tu ubicación.
+  const unirCerca = !(est.fuente === 'video' && pos.tipo === 'gps');
+  const cerca = unirCerca && est.puntos.find((p) => p.tipo === tipo && distancia([p.lon, p.lat], [pos.lon, pos.lat]) <= aj.radio);
   if (cerca) {
     cerca.veces = (cerca.veces || 1) + 1;
     cerca.ultimaVez = iso;
@@ -451,8 +487,8 @@ function aplicarPosicion() {
   const ruta = est.rutas.find((r) => r.id === aj.ruta) || est.rutas[0];
   est.ruta = aj.posicion === 'simulada' ? ruta : null;
   mapa.ponerRuta(est.ruta ? est.ruta.coords : null);
-  $('#chip-pos').textContent = est.ruta ? `Posición simulada · ${est.ruta.corto} · ${aj.kmh} km/h` : 'Posición: GPS del teléfono';
   if (aj.posicion === 'gps') iniciarGps(); else detenerGps();
+  textoPosicion();
   est.ultimaPos = '';
   mapa.seguir = true;
   $('#btn-seguir').hidden = true;
@@ -467,21 +503,56 @@ function posicionActual() {
   return { ...puntoEnRuta(est.ruta.prep, (aj.kmh / 3.6) * t), tipo: 'simulada', precision: null };
 }
 
-function iniciarGps() {
-  if (est.gps != null || !('geolocation' in navigator)) return;
+function textoPosicion() {
+  const chip = $('#chip-pos');
+  if (est.ruta) {
+    chip.textContent = `Recorrido de prueba · ${est.ruta.corto} · ${aj.kmh} km/h`;
+    return;
+  }
+  chip.textContent = {
+    ok: `Tu ubicación · ±${est.posGps?.precision ?? '?'} m`,
+    buscando: 'Buscando tu ubicación…',
+    bloqueada: 'Ubicación bloqueada · tocar para reintentar',
+    sin: 'Este navegador no da ubicación',
+  }[est.gpsEstado];
+  chip.classList.toggle('alerta', est.gpsEstado === 'bloqueada' || est.gpsEstado === 'sin');
+}
+
+/** Pide la ubicación real (el navegador muestra el permiso la primera vez) y la sigue en vivo. */
+function iniciarGps(reintento = false) {
+  if (!('geolocation' in navigator)) { est.gpsEstado = 'sin'; textoPosicion(); return; }
+  if (est.gps != null) return;
+  if (est.gpsEstado !== 'ok') est.gpsEstado = 'buscando';
+  textoPosicion();
   est.gps = navigator.geolocation.watchPosition((p) => {
     const nueva = [p.coords.longitude, p.coords.latitude];
     const previa = est.posGps;
     const r = Number.isFinite(p.coords.heading) ? p.coords.heading
       : previa && distancia([previa.lon, previa.lat], nueva) > 3 ? rumbo([previa.lon, previa.lat], nueva) : previa?.rumbo ?? null;
+    const primera = est.gpsEstado !== 'ok';
     est.posGps = { lon: nueva[0], lat: nueva[1], precision: Math.round(p.coords.accuracy), rumbo: r };
-  }, (e) => aviso(`GPS: ${e.message}`, 'error'), { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+    est.gpsEstado = 'ok';
+    textoPosicion();
+    if (primera) aviso('Ubicación lista: los daños se marcan donde estás');
+  }, (e) => {
+    if (e.code === e.PERMISSION_DENIED) {
+      est.gpsEstado = 'bloqueada';
+      if (est.gps != null) navigator.geolocation.clearWatch(est.gps);
+      est.gps = null;
+      textoPosicion();
+      aviso('Sin permiso de ubicación no se pueden marcar los daños. Actívalo en el candado junto a la dirección y toca el aviso de ubicación.', 'error');
+    } else if (est.gpsEstado !== 'ok') {
+      avisoUnaVez('Todavía no hay señal de ubicación. Al aire libre llega en unos segundos.');
+    }
+  }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+  if (reintento) aviso('Pidiendo la ubicación otra vez…');
 }
 
 function detenerGps() {
   if (est.gps != null) navigator.geolocation.clearWatch(est.gps);
   est.gps = null;
   est.posGps = null;
+  est.gpsEstado = 'buscando';
 }
 
 function tick() {
@@ -507,12 +578,13 @@ function abrirPunto(id) {
     <b>${NOMBRE[p.subtipo] || NOMBRE[p.tipo]} · severidad ${p.severidad}</b>
     <span class="meta">Confianza ${pct(p.conf)} · visto ${p.veces} ${p.veces === 1 ? 'vez' : 'veces'}</span>
     <span class="meta">${fmtFecha(p.fecha)} · ${p.fuente}${p.segundoVideo != null ? ` (seg. ${p.segundoVideo})` : ''}</span>
-    ${p.posicion === 'simulada' ? '<span class="aviso-sim">Posición simulada: no es la ubicación real del daño</span>'
+    ${p.posicion === 'simulada' ? '<span class="aviso-sim">Recorrido de prueba: no es la ubicación real del daño</span>'
       : `<span class="meta">GPS ± ${p.precision ?? '?'} m</span>`}
     <span class="meta calle">${p.calle ? `Calle: ${p.calle}` : 'Buscando la calle…'}</span>
     <button type="button">Borrar este punto</button>`;
   el.querySelector('button').addEventListener('click', async () => {
     est.puntos = est.puntos.filter((q) => q.id !== p.id);
+    est.borrados.add(p.id);
     await almacen.borrar(p.id);
     mapa.popup.remove();
     refrescarPuntos();
@@ -558,7 +630,7 @@ function pintarLista() {
       <div>
         <div class="titulo">${NOMBRE[p.subtipo] || NOMBRE[p.tipo]} <span class="sev ${p.severidad}">${p.severidad}</span></div>
         <div class="meta">${pct(p.conf)} · visto ${p.veces}× · ${fmtFecha(p.fecha)}</div>
-        <div class="meta">${p.calle ? p.calle + ' · ' : ''}${p.fuente}${p.posicion === 'simulada' ? ' · posición simulada' : ''}</div>
+        <div class="meta">${p.calle ? p.calle + ' · ' : ''}${p.fuente}${p.posicion === 'simulada' ? ' · recorrido de prueba' : ''}</div>
       </div>`;
     li.addEventListener('click', () => { cambiarModo('mapa'); mapa.irA(p); setTimeout(() => abrirPunto(p.id), 600); });
     ul.append(li);
@@ -622,6 +694,7 @@ async function importarGeojson(archivo) {
 
 async function borrarTodo() {
   if (!est.puntos.length || !confirm(`¿Borrar los ${est.puntos.length} puntos de este teléfono?`)) return;
+  for (const p of est.puntos) est.borrados.add(p.id);
   await almacen.borrarTodo();
   est.puntos = [];
   refrescarPuntos();

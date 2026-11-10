@@ -32,8 +32,9 @@
         <video id="video" playsinline muted></video>
         <canvas id="capa"></canvas>
         <div id="vacio" class="vacio">
-          <p><b>1.</b> Elige de dónde sale la imagen: la <b>cámara</b> o un <b>video</b> de prueba.</p>
-          <p><b>2.</b> Toca <b>Detectar</b>. Cada bache o grieta confirmado aparece como un punto en el mapa.</p>
+          <p><b>1.</b> Permite la <b>ubicación</b>: cada daño se marca donde estás.</p>
+          <p><b>2.</b> Elige de dónde sale la imagen: la <b>cámara</b> o un <b>video</b> de prueba.</p>
+          <p><b>3.</b> Toca <b>Detectar</b>. Cada bache o grieta confirmado aparece en el mapa al instante y queda guardado en el teléfono.</p>
         </div>
         <div id="hud" class="hud" hidden></div>
         <div id="carga" class="carga" hidden>
@@ -59,7 +60,7 @@
       <div class="contadores">
         <span class="chip bache"><i></i><b id="n-baches">0</b> baches</span>
         <span class="chip grieta"><i></i><b id="n-grietas">0</b> grietas</span>
-        <button id="chip-pos" class="chip pos" type="button">Posición simulada</button>
+        <button id="chip-pos" class="chip pos" type="button">Buscando tu ubicación…</button>
       </div>
     </section>
 
@@ -123,14 +124,14 @@
         </select>
       </label>
       <fieldset>
-        <legend>Posición de cada punto</legend>
-        <label class="fila"><input type="radio" name="posicion" value="simulada" data-ajuste="posicion"> Simulada: el vehículo recorre una ruta de Santa Cruz</label>
-        <label class="fila"><input type="radio" name="posicion" value="gps" data-ajuste="posicion"> GPS real del teléfono</label>
+        <legend>Dónde se marca cada daño</legend>
+        <label class="fila"><input type="radio" name="posicion" value="gps" data-ajuste="posicion"> En tu ubicación real (GPS del teléfono)</label>
+        <label class="fila"><input type="radio" name="posicion" value="simulada" data-ajuste="posicion"> Recorrido de prueba: un vehículo virtual recorre una ruta de Santa Cruz (para probar videos sin moverte)</label>
       </fieldset>
-      <label class="campo">Ruta simulada
+      <label class="campo">Ruta del recorrido de prueba
         <select data-ajuste="ruta" id="sel-ruta"></select>
       </label>
-      <label class="campo">Velocidad simulada: <output data-valor="kmh"></output> km/h
+      <label class="campo">Velocidad del recorrido de prueba: <output data-valor="kmh"></output> km/h
         <input type="range" min="10" max="60" step="5" data-ajuste="kmh">
       </label>
       <label class="campo">Unir con un punto del mismo tipo a menos de <output data-valor="radio"></output> m
@@ -168,7 +169,7 @@
   <dialog id="dlg-info" class="dialogo">
     <form method="dialog">
       <h2>Qué hace</h2>
-      <p>Mira la calle con la cámara (o un video de prueba) y busca baches y grietas con un modelo de IA que corre <b>dentro del teléfono</b>. Cuando un daño aparece en 2 de 3 cuadros seguidos, lo marca en el mapa en la posición del vehículo. Los puntos se guardan solo en este teléfono; se pueden exportar en GeoJSON o CSV.</p>
+      <p>Mira la calle con la cámara (o un video de prueba) y busca baches y grietas con un modelo de IA que corre <b>dentro del teléfono</b>. Cuando un daño aparece en 2 de 3 cuadros seguidos, lo marca al instante en el mapa, en tu ubicación (GPS). Los puntos quedan guardados en este teléfono, también al actualizar o cerrar la app, y se pueden exportar en GeoJSON o CSV.</p>
       <h3>Modelos</h3>
       <ul>
         <li><b>Vehículo:</b> YOLO12s entrenado con RDD2022 (rezzzq, MIT). Baches y grietas.</li>
@@ -180,7 +181,8 @@
         <li>En cámara de vehículo, los baches se detectan poco (AP50 0,15 a 0,23 en datasets públicos).</li>
         <li>Las juntas de losas de hormigón y adoquín pueden salir como grietas.</li>
         <li>La severidad es provisional: sale del tamaño de la caja.</li>
-        <li>Con posición simulada, el punto no es la ubicación real del daño.</li>
+        <li>El GPS tiene unos 5 a 10 m de error. Con un video, los daños se marcan donde está el teléfono, no donde se grabó.</li>
+        <li>Con el recorrido de prueba, el punto no es la ubicación real del daño.</li>
       </ul>
       <p class="nota">Mapa: © OpenStreetMap, teselas de OpenFreeMap, MapLibre GL JS. Modelos con ONNX Runtime Web. Proyecto de Inteligencia Artificial, UCB.</p>
       <button class="btn primario ancho" value="cerrar">Cerrar</button>
