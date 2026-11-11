@@ -46,7 +46,7 @@ cámara o video ─► cuadro (letterbox) ─► worker: ONNX Runtime Web (GPU c
   así la pantalla no se congela. Usa la GPU del teléfono (WebGPU) si hay; si no, la CPU con varios hilos.
   - El preprocesado y el NMS replican a ultralytics. En Node, con ONNX Runtime Web, dan las mismas cajas,
     clases y confianzas que ultralytics en Python (diferencia 0,000 px en 3 casos de prueba).
-  - En una laptop (GPU integrada) va a ~8 cuadros por segundo a 640 px.
+  - En una laptop (GPU integrada) va a ~10 cuadros por segundo a 640 px con el YOLO26s.
 - **Mapa:** MapLibre GL JS con teselas vectoriales de OpenFreeMap (datos de OpenStreetMap), sin clave.
   - Los puntos son una capa GeoJSON con agrupamiento.
   - La calle de un punto se pregunta a Nominatim (OpenStreetMap) solo al tocarlo.
@@ -58,18 +58,33 @@ cámara o video ─► cuadro (letterbox) ─► worker: ONNX Runtime Web (GPU c
 
 ## Modelos
 
-| Modelo | Uso | Medido (AP50 de baches, test congelado del proyecto) | Licencia |
-|---|---|---|---|
-| YOLO12s RDD2022 ([rezzzq](https://huggingface.co/rezzzq/yolo12s-road-damage-rdd2022)) | Vehículo: baches y grietas | 0,15 en dashcam y celular frontal; 0,47 desde vehículo en ruta. Grietas por foto: R 0,82 en Brasil | MIT |
-| YOLO del 1.er parcial (Bisman) | De cerca: baches | 0,68 en fotos de cerca; ~0,01 desde vehículo | ver el repo original |
+AP50 en el test congelado del proyecto, a 640 px (el tamaño de la app). Ninguna foto de test se usó para
+entrenar, elegir el modelo ni elegir umbrales.
 
-Ambos se entrenaron con [ultralytics](https://github.com/ultralytics/ultralytics) (AGPL-3.0).
+| Modelo | Baches: Egipto (celular) | Bucko (dashcam) | Brasil (vehículo) | Bisman (de cerca) | HRP4K (4K, China) | Grietas: Egipto / Brasil | Licencia |
+|---|---:|---:|---:|---:|---:|---:|---|
+| **YOLO26s ajustado** (predeterminado) | **0,47** | **0,41** | **0,61** | **0,35** | 0,04 | **0,20** / 0,06 | AGPL-3.0 |
+| YOLO26s descargado ([TamAko783](https://huggingface.co/TamAko783/YOLO26s_RDD_FRDC_Distilled_v2)) | 0,36 | 0,31 | 0,59 | 0,19 | 0,05 | 0,11 / 0,07 | AGPL-3.0 |
+| YOLO12s RDD2022 ([rezzzq](https://huggingface.co/rezzzq/yolo12s-road-damage-rdd2022)) | 0,15 | 0,15 | 0,47 | 0,15 | 0,03 | 0,08 / 0,06 | MIT |
+| YOLO del 1.er parcial (Bisman), solo baches de cerca | | | | 0,68 | | | ver el repo original |
+
+- **YOLO26s ajustado:** promedio de pesos ([WiSE-FT](https://arxiv.org/abs/2109.01903), α = 0,25) entre el
+  YOLO26s descargado y el mismo modelo ajustado con 6.507 fotos del proyecto (limpias, con aumentos que imitan
+  video de celular por WhatsApp). El ajuste solo subía mucho en los datasets que vio, pero bajaba en HRP4K,
+  el único que ningún modelo vio (0,05 → 0,02): ajustar especializa. El promedio conserva buena parte de la
+  mejora sin esa caída. Se eligió con una regla fijada antes de ver los resultados: el mejor en validación
+  entre los que no empeoran en una mitad de HRP4K; la otra mitad quedó solo para informar.
+- **Ojo:** en Bucko, Brasil y Bisman el ajuste vio fotos de los mismos caminos (o casi copias), así que sus
+  números son optimistas. Egipto es el más limpio. En Santa Cruz no hay fotos etiquetadas: ver "Límites".
+
+Todos se entrenaron con [ultralytics](https://github.com/ultralytics/ultralytics) (AGPL-3.0).
 
 ## Límites
 
 - **No hay fotos de Santa Cruz etiquetadas.** La precisión en estas calles no está medida; los números de
   arriba son de datasets públicos de otros países.
-- Desde un vehículo los baches se detectan poco. Las juntas de losas de hormigón, el adoquín y a veces la
+- Desde un vehículo todavía se escapan baches, sobre todo los lejanos y chicos: a 640 px casi no se ven
+  (HRP4K, fotos 4K en perspectiva: 0,04). Las juntas de losas de hormigón, el adoquín y a veces la
   carrocería del propio auto pueden salir como grietas.
 - La **severidad es provisional**: sale del tamaño de la caja en la imagen, no de una medida real.
 - Con el **recorrido de prueba**, el punto no es la ubicación real del daño (se avisa en cada punto).

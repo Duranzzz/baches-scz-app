@@ -1,6 +1,54 @@
 {
  "modelos": [
   {
+   "id": "yolo26s_ajustado",
+   "titulo": "YOLO26s ajustado (baches y grietas)",
+   "archivo": "yolo26s_ajustado.onnx",
+   "uso": "vehiculo",
+   "clases": {
+    "0": "grieta_longitudinal",
+    "1": "grieta_transversal",
+    "2": "grieta_cocodrilo",
+    "3": "bache"
+   },
+   "nombres_originales": {
+    "0": "Longitudinal Crack (D00)",
+    "1": "Transverse Crack (D10)",
+    "2": "Alligator Crack (D20)",
+    "3": "Pothole (D40)"
+   },
+   "conf": {
+    "bache": 0.1,
+    "grieta": 0.25
+   },
+   "mb": 38.5,
+   "licencia": "AGPL-3.0: promedio de pesos (WiSE-FT, alfa 0,25) entre TamAko783/YOLO26s_RDD_FRDC_Distilled_v2 y el mismo ajustado con las fotos del proyecto (ultralytics, AGPL-3.0)"
+  },
+  {
+   "id": "rdd_yolo26s",
+   "titulo": "YOLO26s descargado (baches y grietas)",
+   "archivo": "rdd_yolo26s.onnx",
+   "uso": "vehiculo",
+   "clases": {
+    "0": "grieta_longitudinal",
+    "1": "grieta_transversal",
+    "2": "grieta_cocodrilo",
+    "3": "bache"
+   },
+   "nombres_originales": {
+    "0": "Longitudinal Crack (D00)",
+    "1": "Transverse Crack (D10)",
+    "2": "Alligator Crack (D20)",
+    "3": "Pothole (D40)"
+   },
+   "conf": {
+    "bache": 0.15,
+    "grieta": 0.3
+   },
+   "mb": 38.5,
+   "licencia": "AGPL-3.0, TamAko783/YOLO26s_RDD_FRDC_Distilled_v2 (entrenado con ultralytics, AGPL-3.0)"
+  },
+  {
    "id": "yolo12s_rdd2022",
    "titulo": "YOLO12s RDD2022 (baches y grietas)",
    "archivo": "yolo12s_rdd2022.onnx",

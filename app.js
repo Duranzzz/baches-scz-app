@@ -10,11 +10,14 @@ const BASE = new URL('./', location.href);
 // Varios hilos de CPU solo si la página está aislada (lo hace sw.js); si no, uno.
 const HILOS = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
 
+// Las confianzas de partida son las del modelo predeterminado en modelos.json; al cambiar de modelo se
+// toman las de ese modelo (las confianzas de modelos distintos no son comparables).
 const PREDETERMINADOS = {
-  modelo: 'yolo12s_rdd2022', soloBaches: false, confBache: 0.25, confGrieta: 0.4, confirmar: true, lado: 640,
+  modelo: 'yolo26s_ajustado', soloBaches: false, confBache: 0.1, confGrieta: 0.25, confirmar: true, lado: 640,
   velocidadVideo: 1, posicion: 'gps', ruta: 'r1', kmh: 25, radio: 15, motor: 'auto',
 };
-const CLAVE_AJUSTES = 'ajustes-v2';   // v2: la ubicación real pasó a ser la predeterminada
+// v2: la ubicación real pasó a ser la predeterminada. v3: el YOLO26s ajustado pasó a ser el modelo predeterminado.
+const CLAVE_AJUSTES = 'ajustes-v3';
 const NOMBRE = {
   bache: 'Bache', grieta: 'Grieta', grieta_longitudinal: 'Grieta longitudinal',
   grieta_transversal: 'Grieta transversal', grieta_cocodrilo: 'Grieta cocodrilo',
@@ -172,6 +175,14 @@ function cambiarAjuste(el) {
   if (el.type === 'radio' && !el.checked) return;
   const valor = el.type === 'checkbox' ? el.checked : (el.type === 'range' || ['lado', 'velocidadVideo'].includes(k)) ? Number(el.value) : el.value;
   aj[k] = valor;
+  const meta = k === 'modelo' ? est.modelos.find((m) => m.id === valor) : null;
+  if (meta?.conf) {   // cada modelo trae sus confianzas, elegidas en validación
+    aj.confBache = meta.conf.bache;
+    aj.confGrieta = meta.conf.grieta;
+    for (const c of ['confBache', 'confGrieta']) {
+      for (const o of document.querySelectorAll(`[data-ajuste="${c}"], [data-valor="${c}"]`)) o.value = String(aj[c]);
+    }
+  }
   guardarAjustes();
   for (const o of document.querySelectorAll(`[data-valor="${k}"]`)) o.value = String(valor);
   if (k === 'modelo' || k === 'motor') liberarDetector();
@@ -337,9 +348,12 @@ async function bucle() {
         mostrarHud(performance.now() - t0);
       }
     } catch (e) {
-      console.error(e);
-      aviso(`Error al detectar: ${e.message}`, 'error');
-      detener();
+      // Si ya se detuvo a propósito (p. ej., al cambiar de modelo en Ajustes), el pedido cortado no es un error.
+      if (est.corriendo) {
+        console.error(e);
+        aviso(`Error al detectar: ${e.message}`, 'error');
+        detener();
+      }
     }
     est.ocupado = false;
   }
@@ -463,7 +477,7 @@ async function registrar(tipo, d, ahora, v, lb) {
   est.puntos.push(p);
   est.evento[tipo] = { punto: p, ultimo: ahora, nuevo: true };
   await guardarPunto(p);
-  aviso(`${NOMBRE[d.clase] || NOMBRE[tipo]} marcado en el mapa · severidad ${sev}`, tipo);
+  aviso(`${NOMBRE[d.clase] || NOMBRE[tipo]} ${tipo === 'grieta' ? 'marcada' : 'marcado'} en el mapa · severidad ${sev}`, tipo);
 }
 
 let pendiente = null;

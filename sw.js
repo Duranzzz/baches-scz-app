@@ -3,7 +3,7 @@
 // puede usar varios hilos de CPU cuando el teléfono no tiene WebGPU.
 // Al publicar una versión nueva, cambiar VERSION para que los teléfonos bajen los archivos nuevos.
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `baches-scz-${VERSION}`;
 const NUCLEO = [
   './', './index.html', './estilos.css', './app.js', './detector.js', './motor.js', './mapa.js', './almacen.js', './geo.js',
