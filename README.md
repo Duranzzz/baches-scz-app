@@ -63,19 +63,21 @@ entrenar, elegir el modelo ni elegir umbrales.
 
 | Modelo | Baches: Egipto (celular) | Bucko (dashcam) | Brasil (vehículo) | Bisman (de cerca) | HRP4K (4K, China) | Grietas: Egipto / Brasil | Licencia |
 |---|---:|---:|---:|---:|---:|---:|---|
-| **YOLO26s ajustado** (predeterminado) | **0,47** | **0,41** | **0,61** | **0,35** | 0,04 | **0,20** / 0,06 | AGPL-3.0 |
+| **Baches SCZ v1** (predeterminado) | **0,47** | **0,41** | **0,61** | **0,35** | 0,04 | **0,20** / 0,06 | AGPL-3.0 |
 | YOLO26s descargado ([TamAko783](https://huggingface.co/TamAko783/YOLO26s_RDD_FRDC_Distilled_v2)) | 0,36 | 0,31 | 0,59 | 0,19 | 0,05 | 0,11 / 0,07 | AGPL-3.0 |
 | YOLO12s RDD2022 ([rezzzq](https://huggingface.co/rezzzq/yolo12s-road-damage-rdd2022)) | 0,15 | 0,15 | 0,47 | 0,15 | 0,03 | 0,08 / 0,06 | MIT |
 | YOLO del 1.er parcial (Bisman), solo baches de cerca | | | | 0,68 | | | ver el repo original |
 
-- **YOLO26s ajustado:** promedio de pesos ([WiSE-FT](https://arxiv.org/abs/2109.01903), α = 0,25) entre el
-  YOLO26s descargado y el mismo modelo ajustado con 6.507 fotos del proyecto (limpias, con aumentos que imitan
+- **Baches SCZ v1:** el modelo del proyecto, con su ficha (`MODEL_CARD.md`) en
+  [Duranzzz/baches-scz](https://github.com/Duranzzz/baches-scz). Es un promedio de pesos
+  ([WiSE-FT](https://arxiv.org/abs/2109.01903), α = 0,25) entre el YOLO26s descargado y el mismo modelo ajustado con 6.507 fotos del proyecto (limpias, con aumentos que imitan
   video de celular por WhatsApp). El ajuste solo subía mucho en los datasets que vio, pero bajaba en HRP4K,
   el único que ningún modelo vio (0,05 → 0,02): ajustar especializa. El promedio conserva buena parte de la
   mejora sin esa caída. Se eligió con una regla fijada antes de ver los resultados: el mejor en validación
   entre los que no empeoran en una mitad de HRP4K; la otra mitad quedó solo para informar.
 - **Ojo:** en Bucko, Brasil y Bisman el ajuste vio fotos de los mismos caminos (o casi copias), así que sus
   números son optimistas. Egipto es el más limpio. En Santa Cruz no hay fotos etiquetadas: ver "Límites".
+- **Los otros tres** quedan en la app solo para comparar: en Ajustes aparecen bajo "Para comparar".
 
 Todos se entrenaron con [ultralytics](https://github.com/ultralytics/ultralytics) (AGPL-3.0).
 

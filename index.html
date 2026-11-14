@@ -172,13 +172,13 @@
       <p>Mira la calle con la cámara (o un video de prueba) y busca baches y grietas con un modelo de IA que corre <b>dentro del teléfono</b>. Cuando un daño aparece en 2 de 3 cuadros seguidos, lo marca al instante en el mapa, en tu ubicación (GPS). Los puntos quedan guardados en este teléfono, también al actualizar o cerrar la app, y se pueden exportar en GeoJSON o CSV.</p>
       <h3>Modelos</h3>
       <ul>
-        <li><b>Vehículo:</b> YOLO12s entrenado con RDD2022 (rezzzq, MIT). Baches y grietas.</li>
-        <li><b>De cerca:</b> el YOLO de baches del 1.er parcial. Rinde con fotos de cerca (AP50 0,68), no desde un vehículo.</li>
+        <li><b>Baches SCZ v1</b> (predeterminado): el modelo del proyecto, para cámara de vehículo. Baches y grietas.</li>
+        <li><b>Para comparar:</b> el YOLO26s descargado y el YOLO12s RDD2022, también de vehículo, y el YOLO de baches del 1.er parcial, que rinde con fotos de cerca (AP50 0,68), no desde un vehículo.</li>
       </ul>
       <h3>Límites</h3>
       <ul>
         <li>No hay fotos de Santa Cruz etiquetadas: la precisión aquí no está medida.</li>
-        <li>En cámara de vehículo, los baches se detectan poco (AP50 0,15 a 0,23 en datasets públicos).</li>
+        <li>En cámara de vehículo, Baches SCZ v1 tiene un AP50 de baches de 0,41 a 0,61 en datasets públicos, y de 0,04 en fotos 4K en perspectiva.</li>
         <li>Las juntas de losas de hormigón y adoquín pueden salir como grietas.</li>
         <li>La severidad es provisional: sale del tamaño de la caja.</li>
         <li>El GPS tiene unos 5 a 10 m de error. Con un video, los daños se marcan donde está el teléfono, no donde se grabó.</li>

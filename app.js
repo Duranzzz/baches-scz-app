@@ -13,10 +13,11 @@ const HILOS = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurren
 // Las confianzas de partida son las del modelo predeterminado en modelos.json; al cambiar de modelo se
 // toman las de ese modelo (las confianzas de modelos distintos no son comparables).
 const PREDETERMINADOS = {
-  modelo: 'yolo26s_ajustado', soloBaches: false, confBache: 0.1, confGrieta: 0.25, confirmar: true, lado: 640,
+  modelo: 'baches_scz_v1', soloBaches: false, confBache: 0.1, confGrieta: 0.25, confirmar: true, lado: 640,
   velocidadVideo: 1, posicion: 'gps', ruta: 'r1', kmh: 25, radio: 15, motor: 'auto',
 };
-// v2: la ubicación real pasó a ser la predeterminada. v3: el YOLO26s ajustado pasó a ser el modelo predeterminado.
+// v2: la ubicación real pasó a ser la predeterminada. v3: el YOLO26s ajustado pasó a ser el modelo predeterminado;
+// desde el 22-nov se llama Baches SCZ v1, y RENOMBRADOS pasa los ajustes guardados al nombre nuevo.
 const CLAVE_AJUSTES = 'ajustes-v3';
 const NOMBRE = {
   bache: 'Bache', grieta: 'Grieta', grieta_longitudinal: 'Grieta longitudinal',
@@ -28,8 +29,14 @@ const COLOR = { bache: '#e53935', grieta: '#fb8c00' };
 const PESO_GRIETA = { grieta_longitudinal: 1, grieta_transversal: 1, grieta_cocodrilo: 2 };
 const EVENTO_S = 1.0;   // sin verlo más de 1 s, lo siguiente es otro daño
 
+// Modelos que cambiaron de nombre: los ajustes guardados en el teléfono pasan al nombre nuevo.
+const RENOMBRADOS = { yolo26s_ajustado: 'baches_scz_v1' };
+
 function leerAjustes() {
-  try { return { ...PREDETERMINADOS, ...JSON.parse(localStorage.getItem(CLAVE_AJUSTES) || '{}') }; } catch { return { ...PREDETERMINADOS }; }
+  let a;
+  try { a = { ...PREDETERMINADOS, ...JSON.parse(localStorage.getItem(CLAVE_AJUSTES) || '{}') }; } catch { a = { ...PREDETERMINADOS }; }
+  a.modelo = RENOMBRADOS[a.modelo] || a.modelo;
+  return a;
 }
 const aj = leerAjustes();
 function guardarAjustes() { try { localStorage.setItem(CLAVE_AJUSTES, JSON.stringify(aj)); } catch { /* sin almacenamiento */ } }
@@ -157,8 +164,11 @@ function cambiarModo(modo) {
 }
 
 function llenarAjustes() {
-  $('#sel-modelo').innerHTML = est.modelos.map((m) =>
-    `<option value="${m.id}">${m.uso === 'cerca' ? 'De cerca' : 'Vehículo'}: ${m.titulo} · ${m.mb} MB</option>`).join('');
+  // El modelo del proyecto va primero; los marcados con "comparacion" en modelos.json, en su propio grupo.
+  const opcion = (m) => `<option value="${m.id}">${m.uso === 'cerca' ? 'De cerca' : 'Vehículo'}: ${m.titulo} · ${m.mb} MB</option>`;
+  const comparar = est.modelos.filter((m) => m.comparacion);
+  $('#sel-modelo').innerHTML = est.modelos.filter((m) => !m.comparacion).map(opcion).join('')
+    + (comparar.length ? `<optgroup label="Para comparar">${comparar.map(opcion).join('')}</optgroup>` : '');
   $('#sel-ruta').innerHTML = est.rutas.map((r) => `<option value="${r.id}">${r.nombre} (${r.km} km)</option>`).join('');
   for (const el of document.querySelectorAll('[data-ajuste]')) {
     const v = aj[el.dataset.ajuste];
@@ -270,7 +280,7 @@ function progreso(texto, fraccion) {
 async function asegurarDetector() {
   if (est.detector && est.detectorId === aj.modelo) return est.detector;
   if (est.cargando) return est.cargando;
-  const meta = est.modelos.find((m) => m.id === aj.modelo) || est.modelos[0];
+  const meta = est.modelos.find((m) => m.id === aj.modelo) || est.modelos.find((m) => !m.comparacion) || est.modelos[0];
   if (!meta) { aviso('No hay modelos en modelos/modelos.json', 'error'); return null; }
   progreso(`Bajando el modelo (${meta.mb} MB, solo la primera vez)…`, 0);
   est.cargando = Detector.crear(meta, new URL('modelos/', BASE), {

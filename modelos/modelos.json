@@ -1,9 +1,9 @@
 {
  "modelos": [
   {
-   "id": "yolo26s_ajustado",
-   "titulo": "YOLO26s ajustado (baches y grietas)",
-   "archivo": "yolo26s_ajustado.onnx",
+   "id": "baches_scz_v1",
+   "titulo": "Baches SCZ v1 (baches y grietas)",
+   "archivo": "baches_scz_v1.onnx",
    "uso": "vehiculo",
    "clases": {
     "0": "grieta_longitudinal",
@@ -22,11 +22,12 @@
     "grieta": 0.25
    },
    "mb": 38.5,
-   "licencia": "AGPL-3.0: promedio de pesos (WiSE-FT, alfa 0,25) entre TamAko783/YOLO26s_RDD_FRDC_Distilled_v2 y el mismo ajustado con las fotos del proyecto (ultralytics, AGPL-3.0)"
+   "licencia": "AGPL-3.0 (ver MODEL_CARD.md)"
   },
   {
    "id": "rdd_yolo26s",
    "titulo": "YOLO26s descargado (baches y grietas)",
+   "comparacion": true,
    "archivo": "rdd_yolo26s.onnx",
    "uso": "vehiculo",
    "clases": {
@@ -51,6 +52,7 @@
   {
    "id": "yolo12s_rdd2022",
    "titulo": "YOLO12s RDD2022 (baches y grietas)",
+   "comparacion": true,
    "archivo": "yolo12s_rdd2022.onnx",
    "uso": "vehiculo",
    "clases": {
@@ -77,6 +79,7 @@
   {
    "id": "parcial1_bisman",
    "titulo": "YOLO del 1er parcial (baches de cerca)",
+   "comparacion": true,
    "archivo": "parcial1_bisman.onnx",
    "uso": "cerca",
    "clases": {
