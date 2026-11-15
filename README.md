@@ -79,7 +79,8 @@ entrenar, elegir el modelo ni elegir umbrales.
 - **a1:** el mismo YOLO26s ajustado con las fotos del proyecto, sin promediar, y solo para baches. Tiene los
   números más altos donde el ajuste vio los mismos caminos (Bucko, Brasil y Bisman). Pero en HRP4K, que no vio,
   baja a 0,02, y en los videos de Santa Cruz marca baches en el 25 % de los cuadros, contra el 4 % del
-  predeterminado.
+  predeterminado. En una revisión a ciegas de esos videos, solo el 32 % de sus eventos eran baches (el
+  predeterminado: 64 %), y encontró los mismos 21 baches distintos.
 - **Ojo:** en Bucko, Brasil y Bisman el ajuste vio fotos de los mismos caminos (o casi copias), así que sus
   números son optimistas. Egipto es el más limpio. En Santa Cruz no hay fotos etiquetadas: ver "Límites".
 - **Los otros cuatro** quedan en la app solo para comparar: en Ajustes aparecen bajo "Para comparar".
