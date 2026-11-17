@@ -44,6 +44,25 @@
    "licencia": "AGPL-3.0 (ver MODEL_CARD.md)"
   },
   {
+   "id": "a2_y26s_hrp4k",
+   "titulo": "a2: entrenado con HRP4K (solo baches)",
+   "comparacion": true,
+   "archivo": "a2_y26s_hrp4k.onnx",
+   "uso": "vehiculo",
+   "clases": {
+    "0": "bache"
+   },
+   "nombres_originales": {
+    "0": "Pothole (D40)"
+   },
+   "conf": {
+    "bache": 0.1,
+    "grieta": 0.25
+   },
+   "mb": 39.2,
+   "licencia": "AGPL-3.0 (ver MODEL_CARD.md)"
+  },
+  {
    "id": "rdd_yolo26s",
    "titulo": "YOLO26s descargado (baches y grietas)",
    "comparacion": true,

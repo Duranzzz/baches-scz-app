@@ -65,6 +65,7 @@ entrenar, elegir el modelo ni elegir umbrales.
 |---|---:|---:|---:|---:|---:|---:|---|
 | **Baches SCZ v1** (predeterminado) | **0,47** | 0,41 | 0,61 | 0,35 | 0,04 | **0,20** / 0,06 | AGPL-3.0 |
 | a1: entrenado sin promediar (solo baches) | 0,44 | 0,63 | 0,66 | 0,83 | 0,02 | | AGPL-3.0 |
+| a2: entrenado con HRP4K (solo baches) | 0,39 | 0,63 | **0,71** | **0,86** | 0,37 (lo vio) | | AGPL-3.0 |
 | YOLO26s descargado ([TamAko783](https://huggingface.co/TamAko783/YOLO26s_RDD_FRDC_Distilled_v2)) | 0,36 | 0,31 | 0,59 | 0,19 | 0,05 | 0,11 / 0,07 | AGPL-3.0 |
 | YOLO12s RDD2022 ([rezzzq](https://huggingface.co/rezzzq/yolo12s-road-damage-rdd2022)) | 0,15 | 0,15 | 0,47 | 0,15 | 0,03 | 0,08 / 0,06 | MIT |
 | YOLO del 1.er parcial (Bisman), solo baches de cerca | | | | 0,68 | | | ver el repo original |
@@ -81,9 +82,12 @@ entrenar, elegir el modelo ni elegir umbrales.
   baja a 0,02, y en los videos de Santa Cruz marca baches en el 25 % de los cuadros, contra el 4 % del
   predeterminado. En una revisión a ciegas de esos videos, solo el 32 % de sus eventos eran baches (el
   predeterminado: 64 %), y encontró los mismos 21 baches distintos.
+- **a2:** como a1, pero sumando al entrenamiento 3.186 fotos de HRP4K. En 200 cuadros de Santa Cruz etiquetados
+  con cajas es el que más baches encuentra: AP50 de 0,30, contra 0,16 de a1 y 0,07 del predeterminado. Pero en
+  Egipto baja a 0,39, y en los videos marca baches en el 34 % de los cuadros.
 - **Ojo:** en Bucko, Brasil y Bisman el ajuste vio fotos de los mismos caminos (o casi copias), así que sus
   números son optimistas. Egipto es el más limpio. En Santa Cruz no hay fotos etiquetadas: ver "Límites".
-- **Los otros cuatro** quedan en la app solo para comparar: en Ajustes aparecen bajo "Para comparar".
+- **Los otros cinco** quedan en la app solo para comparar: en Ajustes aparecen bajo "Para comparar".
 
 Todos se entrenaron con [ultralytics](https://github.com/ultralytics/ultralytics) (AGPL-3.0).
 
